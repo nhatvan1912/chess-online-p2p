@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ranking Match - Chess Online P2P</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>♟️ Ranking Match</h1>
+      <div class="user-info">
+        <span id="player-name">Player</span>
+        <button id="back-btn" class="btn btn-secondary btn-sm">Quay lại</button>
+      </div>
+    </div>
+
+    <div class="ranking-container">
+      <!-- Matchmaking Status -->
+      <div id="matchmaking-status" class="matchmaking-box">
+        <h2>Tìm đối thủ</h2>
+        <p>Nhấn nút bên dưới để bắt đầu tìm đối thủ có trình độ tương đương</p>
+        <button id="start-matchmaking-btn" class="btn btn-primary btn-large">Bắt đầu tìm trận</button>
+      </div>
+
+      <!-- Waiting -->
+      <div id="waiting-status" class="matchmaking-box" style="display: none;">
+        <h2>Đang tìm đối thủ...</h2>
+        <div class="spinner"></div>
+        <p id="wait-time">Thời gian chờ: <span id="timer">0</span>s</p>
+        <p>Đang tìm người chơi có điểm chênh lệch không quá 50</p>
+        <button id="cancel-matchmaking-btn" class="btn btn-danger">Hủy tìm trận</button>
+      </div>
+
+      <!-- Match Found -->
+      <div id="match-found" class="matchmaking-box" style="display: none;">
+        <h2>✅ Đã tìm thấy đối thủ!</h2>
+        <p>Chấp nhận trận đấu trong <span id="accept-timer">30</span>s</p>
+        <div class="button-group">
+          <button id="accept-match-btn" class="btn btn-success btn-large">Chấp nhận</button>
+          <button id="decline-match-btn" class="btn btn-danger btn-large">Từ chối</button>
+        </div>
+      </div>
+
+      <!-- Waiting for opponent -->
+      <div id="waiting-opponent" class="matchmaking-box" style="display: none;">
+        <h2>Đang chờ đối thủ chấp nhận...</h2>
+        <div class="spinner"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/websocket.js"></script>
+  <script src="/js/matchmaking.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    const player = getCurrentPlayer();
+    if (!player) {
+      window.location.href = '/login';
+    }
+
+    document.getElementById('player-name').textContent = player.displayname || player.username;
+
+    // Initialize WebSocket
+    initWebSocket(player.player_id);
+
+    // Back button
+    document.getElementById('back-btn').addEventListener('click', () => {
+      window.location.href = '/play-mode';
+    });
+
+    // Start matchmaking
+    document.getElementById('start-matchmaking-btn').addEventListener('click', () => {
+      startMatchmaking();
+    });
+
+    // Cancel matchmaking
+    document.getElementById('cancel-matchmaking-btn').addEventListener('click', () => {
+      cancelMatchmaking();
+    });
+
+    // Accept match
+    document.getElementById('accept-match-btn').addEventListener('click', () => {
+      acceptMatch();
+    });
+
+    // Decline match
+    document.getElementById('decline-match-btn').addEventListener('click', () => {
+      declineMatch();
+    });
+  </script>
+</body>
+</html>

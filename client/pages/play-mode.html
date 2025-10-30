@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chọn chế độ chơi - Chess Online P2P</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>♟️ Chess Online P2P</h1>
+      <div class="user-info">
+        <span id="player-name">Player</span>
+        <button id="logout-btn" class="btn btn-secondary btn-sm">Đăng xuất</button>
+      </div>
+    </div>
+
+    <div class="play-mode-container">
+      <h2>Chọn chế độ chơi</h2>
+      
+      <div class="mode-selection">
+        <div class="mode-card">
+          <div class="mode-icon">🏆</div>
+          <h3>Ranking Match</h3>
+          <p>Thi đấu xếp hạng với người chơi cùng trình độ. Tìm đối thủ với điểm số chênh lệch không quá 50 điểm.</p>
+          <button id="ranking-btn" class="btn btn-primary btn-large">Chơi Ranking</button>
+        </div>
+
+        <div class="mode-card">
+          <div class="mode-icon">🎮</div>
+          <h3>Custom Match</h3>
+          <p>Tạo hoặc tham gia phòng tùy chỉnh. Chơi với bạn bè hoặc người chơi khác với các thiết lập riêng.</p>
+          <button id="custom-btn" class="btn btn-success btn-large">Chơi Custom</button>
+        </div>
+      </div>
+
+      <div class="stats-section">
+        <h3>Thống kê của bạn</h3>
+        <div id="player-stats" class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-label">Điểm</div>
+            <div class="stat-value" id="stat-points">0</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Trận thắng</div>
+            <div class="stat-value" id="stat-wins">0</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Trận thua</div>
+            <div class="stat-value" id="stat-losses">0</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Hòa</div>
+            <div class="stat-value" id="stat-draws">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/websocket.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    const player = getCurrentPlayer();
+    if (!player) {
+      window.location.href = '/login';
+    }
+
+    document.getElementById('player-name').textContent = player.displayname || player.username;
+
+    // Load player stats
+    fetch(`/api/players/${player.player_id}/stats`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.stats) {
+          document.getElementById('stat-points').textContent = data.stats.point;
+          document.getElementById('stat-wins').textContent = data.stats.wins;
+          document.getElementById('stat-losses').textContent = data.stats.losses;
+          document.getElementById('stat-draws').textContent = data.stats.draws;
+        }
+      });
+
+    // Ranking button
+    document.getElementById('ranking-btn').addEventListener('click', () => {
+      window.location.href = '/ranking';
+    });
+
+    // Custom button
+    document.getElementById('custom-btn').addEventListener('click', () => {
+      window.location.href = '/custom-lobby';
+    });
+
+    // Logout button
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        localStorage.removeItem('player');
+        window.location.href = '/login';
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    });
+
+    // Initialize WebSocket
+    initWebSocket(player.player_id);
+  </script>
+</body>
+</html>

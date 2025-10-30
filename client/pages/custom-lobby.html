@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Lobby - Chess Online P2P</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>♟️ Custom Match Lobby</h1>
+      <div class="user-info">
+        <span id="player-name">Player</span>
+        <button id="back-btn" class="btn btn-secondary btn-sm">Quay lại</button>
+      </div>
+    </div>
+
+    <div class="lobby-container">
+      <div class="lobby-section">
+        <h2>Tạo phòng mới</h2>
+        <form id="create-room-form" class="room-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="room-name">Tên phòng</label>
+              <input type="text" id="room-name" required>
+            </div>
+            <div class="form-group">
+              <label for="room-type">Loại phòng</label>
+              <select id="room-type">
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row" id="password-row" style="display: none;">
+            <div class="form-group">
+              <label for="room-password">Mật khẩu</label>
+              <input type="password" id="room-password">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="room-mode">Chế độ</label>
+              <select id="room-mode">
+                <option value="normal">Normal (Thời gian mỗi nước)</option>
+                <option value="blitz">Blitz (Tổng thời gian + tăng)</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="time-settings-normal" class="time-settings">
+            <div class="form-group">
+              <label for="per-move-time">Thời gian mỗi nước (giây)</label>
+              <input type="number" id="per-move-time" value="60" min="10" max="600">
+            </div>
+          </div>
+
+          <div id="time-settings-blitz" class="time-settings" style="display: none;">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="initial-time">Thời gian ban đầu (giây)</label>
+                <input type="number" id="initial-time" value="300" min="60" max="1800">
+              </div>
+              <div class="form-group">
+                <label for="increment-time">Tăng mỗi nước (giây)</label>
+                <input type="number" id="increment-time" value="3" min="0" max="30">
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Tạo phòng</button>
+        </form>
+      </div>
+
+      <div class="lobby-section">
+        <h2>Danh sách phòng</h2>
+        <div id="rooms-list" class="rooms-list">
+          <p class="loading">Đang tải...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div id="password-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <h3>Nhập mật khẩu phòng</h3>
+        <input type="password" id="join-password" class="form-control">
+        <div class="button-group">
+          <button id="submit-password-btn" class="btn btn-primary">Tham gia</button>
+          <button id="cancel-password-btn" class="btn btn-secondary">Hủy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/websocket.js"></script>
+  <script src="/js/room.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    const player = getCurrentPlayer();
+    if (!player) {
+      window.location.href = '/login';
+    }
+
+    document.getElementById('player-name').textContent = player.displayname || player.username;
+
+    // Initialize WebSocket
+    initWebSocket(player.player_id);
+
+    // Back button
+    document.getElementById('back-btn').addEventListener('click', () => {
+      window.location.href = '/play-mode';
+    });
+
+    // Room type change
+    document.getElementById('room-type').addEventListener('change', (e) => {
+      const passwordRow = document.getElementById('password-row');
+      passwordRow.style.display = e.target.value === 'private' ? 'block' : 'none';
+    });
+
+    // Room mode change
+    document.getElementById('room-mode').addEventListener('change', (e) => {
+      const normalSettings = document.getElementById('time-settings-normal');
+      const blitzSettings = document.getElementById('time-settings-blitz');
+      
+      if (e.target.value === 'blitz') {
+        normalSettings.style.display = 'none';
+        blitzSettings.style.display = 'block';
+      } else {
+        normalSettings.style.display = 'block';
+        blitzSettings.style.display = 'none';
+      }
+    });
+
+    // Create room form
+    document.getElementById('create-room-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      createRoom();
+    });
+
+    // Load rooms
+    loadRooms();
+
+    // Listen for room list updates
+    if (window.ws) {
+      const originalOnMessage = window.ws.onmessage;
+      window.ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'room_list_updated') {
+          loadRooms();
+        }
+        if (originalOnMessage) originalOnMessage(event);
+      };
+    }
+  </script>
+</body>
+</html>

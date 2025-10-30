@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng nhập - Chess Online P2P</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="auth-container">
+      <h1>♟️ Chess Online P2P</h1>
+      
+      <!-- Login Form -->
+      <div id="login-form" class="form-container">
+        <h2>Đăng nhập</h2>
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="login-username">Username</label>
+            <input type="text" id="login-username" required>
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Đăng nhập</button>
+        </form>
+        <p class="form-switch">
+          Chưa có tài khoản? <a href="#" id="show-register">Đăng ký ngay</a>
+        </p>
+      </div>
+
+      <!-- Register Form -->
+      <div id="register-form" class="form-container" style="display: none;">
+        <h2>Đăng ký</h2>
+        <form id="registerForm">
+          <div class="form-group">
+            <label for="register-username">Username</label>
+            <input type="text" id="register-username" required minlength="3">
+          </div>
+          <div class="form-group">
+            <label for="register-email">Email</label>
+            <input type="email" id="register-email" required>
+          </div>
+          <div class="form-group">
+            <label for="register-displayname">Tên hiển thị</label>
+            <input type="text" id="register-displayname">
+          </div>
+          <div class="form-group">
+            <label for="register-password">Password</label>
+            <input type="password" id="register-password" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label for="register-confirm-password">Xác nhận Password</label>
+            <input type="password" id="register-confirm-password" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Đăng ký</button>
+        </form>
+        <p class="form-switch">
+          Đã có tài khoản? <a href="#" id="show-login">Đăng nhập</a>
+        </p>
+      </div>
+
+      <div id="message" class="message"></div>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    // Toggle between login and register forms
+    document.getElementById('show-register').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('login-form').style.display = 'none';
+      document.getElementById('register-form').style.display = 'block';
+    });
+
+    document.getElementById('show-login').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('register-form').style.display = 'none';
+      document.getElementById('login-form').style.display = 'block';
+    });
+
+    // Handle login
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('login-username').value;
+      const password = document.getElementById('login-password').value;
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          localStorage.setItem('player', JSON.stringify(data.player));
+          showMessage('Đăng nhập thành công!', 'success');
+          setTimeout(() => {
+            window.location.href = '/play-mode';
+          }, 1000);
+        } else {
+          showMessage(data.message, 'error');
+        }
+      } catch (error) {
+        showMessage('Lỗi kết nối server', 'error');
+      }
+    });
+
+    // Handle register
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const username = document.getElementById('register-username').value;
+      const email = document.getElementById('register-email').value;
+      const displayname = document.getElementById('register-displayname').value;
+      const password = document.getElementById('register-password').value;
+      const confirmPassword = document.getElementById('register-confirm-password').value;
+
+      if (password !== confirmPassword) {
+        showMessage('Password không khớp', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, email, displayname })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage('Đăng ký thành công! Vui lòng đăng nhập.', 'success');
+          setTimeout(() => {
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
+          }, 1500);
+        } else {
+          showMessage(data.message, 'error');
+        }
+      } catch (error) {
+        showMessage('Lỗi kết nối server', 'error');
+      }
+    });
+
+    function showMessage(text, type) {
+      const messageEl = document.getElementById('message');
+      messageEl.textContent = text;
+      messageEl.className = `message ${type}`;
+      messageEl.style.display = 'block';
+      
+      setTimeout(() => {
+        messageEl.style.display = 'none';
+      }, 3000);
+    }
+
+    // Check if already logged in
+    const player = JSON.parse(localStorage.getItem('player') || 'null');
+    if (player) {
+      window.location.href = '/play-mode';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Room Detail - Chess Online P2P</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>♟️ Chi tiết phòng</h1>
+      <div class="user-info">
+        <span id="player-name">Player</span>
+        <button id="leave-room-btn" class="btn btn-danger btn-sm">Rời phòng</button>
+      </div>
+    </div>
+
+    <div class="room-detail-container">
+      <div class="room-info-section">
+        <h2 id="room-title">Room Name</h2>
+        <p>Mã phòng: <strong id="room-code">XXXXXX</strong></p>
+        <p>Chế độ: <span id="room-mode">Normal</span></p>
+        <p id="time-info">Thời gian: 60s/nước</p>
+      </div>
+
+      <div class="players-section">
+        <div class="player-slot">
+          <h3>Host</h3>
+          <div class="player-card" id="host-card">
+            <div class="player-avatar">👤</div>
+            <div class="player-info">
+              <div class="player-name" id="host-name">Đang chờ...</div>
+              <div class="player-status" id="host-status">
+                <span class="status-indicator"></span>
+                <span>Chưa sẵn sàng</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="vs-divider">VS</div>
+
+        <div class="player-slot">
+          <h3>Guest</h3>
+          <div class="player-card" id="guest-card">
+            <div class="player-avatar">👤</div>
+            <div class="player-info">
+              <div class="player-name" id="guest-name">Đang chờ...</div>
+              <div class="player-status" id="guest-status">
+                <span class="status-indicator"></span>
+                <span>Chưa sẵn sàng</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="room-actions">
+        <button id="ready-btn" class="btn btn-success btn-large">Sẵn sàng</button>
+        <button id="start-game-btn" class="btn btn-primary btn-large" style="display: none;" disabled>Bắt đầu game</button>
+      </div>
+
+      <div class="online-players-section">
+        <h3>Người chơi trực tuyến</h3>
+        <div id="online-players-list" class="online-players-list">
+          <p class="loading">Đang tải...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/websocket.js"></script>
+  <script src="/js/room.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    const player = getCurrentPlayer();
+    if (!player) {
+      window.location.href = '/login';
+    }
+
+    document.getElementById('player-name').textContent = player.displayname || player.username;
+
+    // Get room ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomId = urlParams.get('roomId');
+
+    if (!roomId) {
+      window.location.href = '/custom-lobby';
+    }
+
+    // Initialize WebSocket
+    initWebSocket(player.player_id);
+
+    // Load room details
+    loadRoomDetails(roomId);
+
+    // Load online players
+    loadOnlinePlayers();
+
+    // Ready button
+    let isReady = false;
+    document.getElementById('ready-btn').addEventListener('click', () => {
+      isReady = !isReady;
+      toggleReady(roomId, isReady);
+    });
+
+    // Start game button
+    document.getElementById('start-game-btn').addEventListener('click', () => {
+      startGameFromRoom(roomId);
+    });
+
+    // Leave room button
+    document.getElementById('leave-room-btn').addEventListener('click', async () => {
+      try {
+        await fetch(`/api/rooms/${roomId}/leave`, { method: 'POST' });
+        window.location.href = '/custom-lobby';
+      } catch (error) {
+        console.error('Leave room error:', error);
+      }
+    });
+
+    // Listen for room updates
+    if (window.ws) {
+      const originalOnMessage = window.ws.onmessage;
+      window.ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'room_updated' && data.room.id == roomId) {
+          updateRoomUI(data.room);
+        }
+        
+        if (data.type === 'game_started' && data.roomId == roomId) {
+          // Redirect to game board
+          window.location.href = `/game-board?gameId=${data.gameId}`;
+        }
+
+        if (data.type === 'room_invitation') {
+          // Handle invitation
+          if (confirm(`Bạn được mời vào phòng. Tham gia?`)) {
+            window.location.href = `/room-detail?roomId=${data.roomId}`;
+          }
+        }
+        
+        if (originalOnMessage) originalOnMessage(event);
+      };
+    }
+
+    function updateRoomUI(room) {
+      // Update host
+      if (room.host_player_id) {
+        const hostStatus = document.getElementById('host-status');
+        hostStatus.querySelector('span:last-child').textContent = 
+          room.host_ready ? '✓ Sẵn sàng' : 'Chưa sẵn sàng';
+        hostStatus.classList.toggle('ready', room.host_ready);
+      }
+
+      // Update guest
+      if (room.guest_player_id) {
+        const guestStatus = document.getElementById('guest-status');
+        guestStatus.querySelector('span:last-child').textContent = 
+          room.guest_ready ? '✓ Sẵn sàng' : 'Chưa sẵn sàng';
+        guestStatus.classList.toggle('ready', room.guest_ready);
+      }
+
+      // Update start button (only show for host)
+      if (room.host_player_id === player.player_id) {
+        const startBtn = document.getElementById('start-game-btn');
+        startBtn.style.display = 'block';
+        startBtn.disabled = !(room.host_ready && room.guest_ready && room.guest_player_id);
+      }
+    }
+  </script>
+</body>
+</html>

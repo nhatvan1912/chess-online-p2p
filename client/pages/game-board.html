@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Board - Chess Online P2P</title>
+  <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>♟️ Chess Game</h1>
+      <div class="user-info">
+        <span id="player-name">Player</span>
+      </div>
+    </div>
+
+    <div class="game-container">
+      <!-- Left Panel: Board -->
+      <div class="board-panel">
+        <div class="player-info-bar" id="opponent-info">
+          <div class="player-name" id="opponent-name">Opponent</div>
+          <div class="player-timer" id="opponent-timer">10:00</div>
+        </div>
+
+        <div id="board" class="chess-board"></div>
+
+        <div class="player-info-bar" id="player-info">
+          <div class="player-name" id="current-player-name">You</div>
+          <div class="player-timer" id="player-timer">10:00</div>
+        </div>
+
+        <div class="game-status" id="game-status">
+          <p id="status-text">Chờ đối thủ...</p>
+        </div>
+
+        <div class="game-actions">
+          <button id="offer-draw-btn" class="btn btn-secondary">Đề nghị hòa</button>
+          <button id="resign-btn" class="btn btn-danger">Đầu hàng</button>
+        </div>
+      </div>
+
+      <!-- Right Panel: Moves & Chat -->
+      <div class="side-panel">
+        <div class="moves-panel">
+          <h3>Lịch sử nước đi</h3>
+          <div id="moves-list" class="moves-list"></div>
+        </div>
+
+        <div class="chat-panel">
+          <h3>Chat</h3>
+          <div id="chat-messages" class="chat-messages"></div>
+          <div class="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Nhập tin nhắn...">
+            <button id="send-chat-btn" class="btn btn-primary btn-sm">Gửi</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Draw Offer Modal -->
+    <div id="draw-offer-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <h3>Đối thủ đề nghị hòa</h3>
+        <p>Bạn có chấp nhận hòa không?</p>
+        <div class="button-group">
+          <button id="accept-draw-btn" class="btn btn-success">Chấp nhận</button>
+          <button id="decline-draw-btn" class="btn btn-danger">Từ chối</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game End Modal -->
+    <div id="game-end-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <h2 id="result-title">Kết quả trận đấu</h2>
+        <p id="result-message"></p>
+        <button id="back-to-lobby-btn" class="btn btn-primary">Quay lại lobby</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+  <script src="/js/websocket.js"></script>
+  <script src="/js/game.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    const player = getCurrentPlayer();
+    if (!player) {
+      window.location.href = '/login';
+    }
+
+    document.getElementById('player-name').textContent = player.displayname || player.username;
+    document.getElementById('current-player-name').textContent = player.displayname || player.username;
+
+    // Get game ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const gameId = urlParams.get('gameId');
+
+    if (!gameId) {
+      alert('Game ID không hợp lệ');
+      window.location.href = '/play-mode';
+    }
+
+    // Initialize WebSocket
+    initWebSocket(player.player_id);
+
+    // Initialize game
+    initGame(gameId, player.player_id);
+
+    // Game actions
+    document.getElementById('offer-draw-btn').addEventListener('click', () => {
+      offerDraw(gameId);
+    });
+
+    document.getElementById('resign-btn').addEventListener('click', () => {
+      if (confirm('Bạn có chắc muốn đầu hàng?')) {
+        resignGame(gameId);
+      }
+    });
+
+    // Draw offer response
+    document.getElementById('accept-draw-btn').addEventListener('click', () => {
+      acceptDrawOffer(gameId);
+      document.getElementById('draw-offer-modal').style.display = 'none';
+    });
+
+    document.getElementById('decline-draw-btn').addEventListener('click', () => {
+      document.getElementById('draw-offer-modal').style.display = 'none';
+    });
+
+    // Chat
+    document.getElementById('send-chat-btn').addEventListener('click', () => {
+      sendChatMessage(gameId);
+    });
+
+    document.getElementById('chat-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendChatMessage(gameId);
+      }
+    });
+
+    // Back to lobby
+    document.getElementById('back-to-lobby-btn').addEventListener('click', () => {
+      window.location.href = '/play-mode';
+    });
+
+    // Listen for WebSocket messages
+    if (window.ws) {
+      const originalOnMessage = window.ws.onmessage;
+      window.ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'opponent_move') {
+          handleOpponentMove(data);
+        }
+        
+        if (data.type === 'draw_offered') {
+          document.getElementById('draw-offer-modal').style.display = 'flex';
+        }
+        
+        if (data.type === 'game_ended') {
+          handleGameEnd(data);
+        }
+        
+        if (data.type === 'chat_message') {
+          addChatMessage(data.message, false);
+        }
+        
+        if (originalOnMessage) originalOnMessage(event);
+      };
+    }
+  </script>
+</body>
+</html>

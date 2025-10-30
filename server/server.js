@@ -18,8 +18,13 @@ const app = express();
 const server = http.createServer(app);
 
 // Middleware
+// Configure CORS with specific origins in production
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:3000'];
+
 app.use(cors({
-  origin: true,
+  origin: process.env.NODE_ENV === 'production' ? allowedOrigins : true,
   credentials: true
 }));
 app.use(express.json());

@@ -351,9 +351,15 @@ function addChatMessage(message, isOwn) {
   const chatMessages = document.getElementById('chat-messages');
   const div = document.createElement('div');
   div.className = `chat-message ${isOwn ? 'own' : ''}`;
-  div.textContent = message;
+  // Use textContent to prevent XSS
+  div.textContent = sanitizeText(message);
   chatMessages.appendChild(div);
   chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function sanitizeText(text) {
+  // Basic sanitization - remove HTML tags and dangerous characters
+  return String(text).replace(/[<>]/g, '');
 }
 
 // Export functions

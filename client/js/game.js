@@ -1,4 +1,3 @@
-// Game functionality with chess.js and chessboard.js
 
 let game = null;
 let board = null;
@@ -7,8 +6,7 @@ let playerColor = null;
 let opponentId = null;
 let moveCount = 0;
 
-// Timer variables
-let playerTime = 600; // 10 minutes default
+let playerTime = 600; 
 let opponentTime = 600;
 let timerInterval = null;
 let isPlayerTurn = false;
@@ -16,7 +14,6 @@ let isPlayerTurn = false;
 async function initGame(gameId, playerId) {
   currentGameId = gameId;
   
-  // Load game info
   try {
     const response = await fetch(`/api/games/${gameId}`);
     const data = await response.json();
@@ -24,7 +21,6 @@ async function initGame(gameId, playerId) {
     if (data.success && data.game) {
       const gameData = data.game;
       
-      // Determine player color
       if (gameData.white_player_id === playerId) {
         playerColor = 'white';
         opponentId = gameData.black_player_id;
@@ -33,7 +29,6 @@ async function initGame(gameId, playerId) {
         opponentId = gameData.white_player_id;
       }
 
-      // Load opponent info
       fetch(`/api/players/${opponentId}`)
         .then(res => res.json())
         .then(data => {
@@ -43,22 +38,20 @@ async function initGame(gameId, playerId) {
           }
         });
 
-      // Initialize chess.js
       game = new Chess();
 
-      // Initialize chessboard.js
       const config = {
         draggable: true,
         position: 'start',
         onDragStart: onDragStart,
         onDrop: onDrop,
         onSnapEnd: onSnapEnd,
-        orientation: playerColor
+        orientation: playerColor,
+        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
       };
 
       board = Chessboard('board', config);
 
-      // Load existing moves if any
       if (data.moves && data.moves.length > 0) {
         data.moves.forEach(move => {
           game.move(move.move_notation);
@@ -68,10 +61,8 @@ async function initGame(gameId, playerId) {
         moveCount = data.moves.length;
       }
 
-      // Update status
       updateStatus();
 
-      // Start timer if it's player's turn
       isPlayerTurn = (game.turn() === playerColor.charAt(0));
       if (isPlayerTurn) {
         startTimer();
@@ -83,13 +74,9 @@ async function initGame(gameId, playerId) {
 }
 
 function onDragStart(source, piece, position, orientation) {
-  // Don't allow moves if game is over
   if (game.game_over()) return false;
-
-  // Don't allow moves if not player's turn
   if (!isPlayerTurn) return false;
 
-  // Only allow player to move their own pieces
   if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
       (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
     return false;
@@ -97,31 +84,18 @@ function onDragStart(source, piece, position, orientation) {
 }
 
 function onDrop(source, target) {
-  // Try to make the move
   const move = game.move({
     from: source,
     to: target,
-    promotion: 'q' // Always promote to queen for simplicity
+    promotion: 'q' 
   });
-
-  // Illegal move
   if (move === null) return 'snapback';
-
-  // Legal move - send to server
   moveCount++;
   sendMove(move, game.fen());
-  
-  // Add to move list
   addMoveToList(move.san, playerColor);
-
-  // Update status
   updateStatus();
-
-  // Switch turn
   isPlayerTurn = false;
   startTimer();
-
-  // Check for game end
   checkGameEnd();
 }
 
@@ -143,21 +117,17 @@ function sendMove(move, fen) {
 }
 
 function handleOpponentMove(data) {
-  // Apply opponent's move
   const move = game.move(data.move);
   if (move) {
     board.position(game.fen());
     addMoveToList(data.move, data.playerColor);
     moveCount = data.moveNumber;
     
-    // Update status
     updateStatus();
     
-    // Switch turn
     isPlayerTurn = true;
     startTimer();
 
-    // Check for game end
     checkGameEnd();
   }
 }
@@ -197,7 +167,6 @@ function checkGameEnd() {
       result = 'draw';
     }
 
-    // Notify server
     sendWebSocketMessage({
       type: 'game_end',
       payload: {
@@ -221,7 +190,6 @@ function addMoveToList(move, color) {
     }
   }
   
-  // Scroll to bottom
   movesList.scrollTop = movesList.scrollHeight;
 }
 
@@ -238,7 +206,6 @@ function startTimer() {
       if (playerTime <= 0) {
         stopTimer();
         alert('Hết thời gian! Bạn thua.');
-        // Notify server about timeout
         sendWebSocketMessage({
           type: 'timeout',
           payload: {
@@ -342,7 +309,6 @@ function sendChatMessage(gameId) {
     }
   });
 
-  // Add to own chat
   addChatMessage(message, true);
   input.value = '';
 }
@@ -351,18 +317,15 @@ function addChatMessage(message, isOwn) {
   const chatMessages = document.getElementById('chat-messages');
   const div = document.createElement('div');
   div.className = `chat-message ${isOwn ? 'own' : ''}`;
-  // Use textContent to prevent XSS
   div.textContent = sanitizeText(message);
   chatMessages.appendChild(div);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 function sanitizeText(text) {
-  // Basic sanitization - remove HTML tags and dangerous characters
   return String(text).replace(/[<>]/g, '');
 }
 
-// Export functions
 window.initGame = initGame;
 window.handleOpponentMove = handleOpponentMove;
 window.offerDraw = offerDraw;

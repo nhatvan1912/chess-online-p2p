@@ -1,5 +1,3 @@
-// Room functionality
-
 let selectedRoomIdForPassword = null;
 
 async function createRoom() {

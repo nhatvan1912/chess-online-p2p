@@ -3,20 +3,16 @@ const GameDAO = require('../../dao/GameDAO');
 
 class GameHandler {
   constructor() {
-    // Lưu thông tin các game đang chơi
     this.activeGames = new Map(); // gameId -> { timers, drawOffer }
   }
 
-  // Xử lý nước đi
   async makeMove(playerId, payload, wsServer) {
     try {
       const { gameId, move, fen, moveNumber, playerColor } = payload;
 
-      // Lấy thông tin game
       const gameInfo = await GameService.getGameInfo(gameId);
       const game = gameInfo.game;
 
-      // Kiểm tra turn
       if (
         (playerColor === 'white' && game.white_player_id !== playerId) ||
         (playerColor === 'black' && game.black_player_id !== playerId)
@@ -24,7 +20,6 @@ class GameHandler {
         throw new Error('Không phải lượt của bạn');
       }
 
-      // Lưu nước đi
       await GameService.saveMove({
         game_id: gameId,
         move_number: moveNumber,
@@ -33,10 +28,8 @@ class GameHandler {
         board_state_fen: fen
       });
 
-      // Xác định opponent
       const opponentId = playerColor === 'white' ? game.black_player_id : game.white_player_id;
 
-      // Gửi nước đi cho opponent
       wsServer.sendToPlayer(opponentId, {
         type: 'opponent_move',
         gameId: gameId,
@@ -46,7 +39,6 @@ class GameHandler {
         playerColor: playerColor
       });
 
-      // Confirm cho player đã di
       wsServer.sendToPlayer(playerId, {
         type: 'move_confirmed',
         gameId: gameId,
@@ -60,7 +52,6 @@ class GameHandler {
     }
   }
 
-  // Đề nghị hòa
   offerDraw(playerId, gameId, wsServer) {
     GameDAO.getGameById(gameId)
       .then(game => {
@@ -72,7 +63,6 @@ class GameHandler {
           ? game.black_player_id 
           : game.white_player_id;
 
-        // Gửi đề nghị hòa cho opponent
         wsServer.sendToPlayer(opponentId, {
           type: 'draw_offered',
           gameId: gameId,
@@ -92,7 +82,6 @@ class GameHandler {
       });
   }
 
-  // Chấp nhận hòa
   async acceptDraw(playerId, gameId, wsServer) {
     try {
       const game = await GameDAO.getGameById(gameId);
@@ -100,14 +89,12 @@ class GameHandler {
         throw new Error('Game không tồn tại');
       }
 
-      // Kết thúc game với kết quả hòa
       await GameService.endGame(gameId, 'draw');
 
       const opponentId = game.white_player_id === playerId 
         ? game.black_player_id 
         : game.white_player_id;
 
-      // Gửi thông báo game kết thúc
       const endGameData = {
         type: 'game_ended',
         gameId: gameId,
@@ -125,7 +112,6 @@ class GameHandler {
     }
   }
 
-  // Đầu hàng
   async resign(playerId, gameId, wsServer) {
     try {
       const game = await GameDAO.getGameById(gameId);
@@ -133,17 +119,13 @@ class GameHandler {
         throw new Error('Game không tồn tại');
       }
 
-      // Xác định kết quả
       const result = game.white_player_id === playerId ? 'black_win' : 'white_win';
-      
-      // Kết thúc game
       await GameService.endGame(gameId, result);
 
       const opponentId = game.white_player_id === playerId 
         ? game.black_player_id 
         : game.white_player_id;
 
-      // Gửi thông báo game kết thúc
       const endGameData = {
         type: 'game_ended',
         gameId: gameId,
@@ -161,7 +143,6 @@ class GameHandler {
     }
   }
 
-  // Gửi tin nhắn chat
   sendChatMessage(playerId, payload, wsServer) {
     GameDAO.getGameById(payload.gameId)
       .then(game => {
@@ -173,7 +154,6 @@ class GameHandler {
           ? game.black_player_id 
           : game.white_player_id;
 
-        // Gửi message cho opponent
         wsServer.sendToPlayer(opponentId, {
           type: 'chat_message',
           gameId: payload.gameId,
@@ -190,7 +170,6 @@ class GameHandler {
       });
   }
 
-  // Xử lý hết thời gian
   async timeOut(gameId, playerColor, wsServer) {
     try {
       const game = await GameDAO.getGameById(gameId);
@@ -198,12 +177,9 @@ class GameHandler {
         return;
       }
 
-      // Xác định kết quả (player hết time thua)
       const result = playerColor === 'white' ? 'black_win' : 'white_win';
       
       await GameService.endGame(gameId, result);
-
-      // Gửi thông báo game kết thúc
       const endGameData = {
         type: 'game_ended',
         gameId: gameId,
@@ -218,7 +194,6 @@ class GameHandler {
     }
   }
 
-  // Xử lý checkmate/stalemate từ client
   async handleGameEnd(gameId, result, wsServer) {
     try {
       const game = await GameDAO.getGameById(gameId);
@@ -228,7 +203,6 @@ class GameHandler {
 
       await GameService.endGame(gameId, result);
 
-      // Gửi thông báo
       const endGameData = {
         type: 'game_ended',
         gameId: gameId,

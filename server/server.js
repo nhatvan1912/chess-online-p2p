@@ -5,20 +5,15 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
-// Import routes
 const authRoutes = require('./routes/authRoutes');
 const playerRoutes = require('./routes/playerRoutes');
 const roomRoutes = require('./routes/roomRoutes');
 const gameRoutes = require('./routes/gameRoutes');
 
-// Import WebSocket server
 const WebSocketServer = require('./websocket/WebSocketServer');
-
 const app = express();
 const server = http.createServer(app);
 
-// Middleware
-// Configure CORS with specific origins in production
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',')
   : ['http://localhost:3000'];
@@ -41,8 +36,6 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production'
   }
 }));
-
-// Serve static files
 app.use(express.static(path.join(__dirname, '../client')));
 
 // API Routes
@@ -68,19 +61,18 @@ app.get('/ranking', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/pages/ranking.html'));
 });
 
-app.get('/custom-lobby', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/pages/custom-lobby.html'));
+app.get('/custom-match', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/pages/custom-match.html'));
 });
 
 app.get('/room-detail', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/pages/room-detail.html'));
 });
 
-app.get('/game-board', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/pages/game-board.html'));
+app.get('/game', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/pages/game.html'));
 });
 
-// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
@@ -89,22 +81,13 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Initialize WebSocket server
 const wsServer = new WebSocketServer(server);
 
-// Start server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`
-╔════════════════════════════════════════╗
-║   🎮 Chess Online P2P Server          ║
-║   ✅ HTTP Server: http://localhost:${PORT}  ║
-║   ✅ WebSocket Server: Ready           ║
-╚════════════════════════════════════════╝
-  `);
+  console.log(`HTTP Server: http://localhost:${PORT}`);
 });
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM signal received: closing HTTP server');
   server.close(() => {

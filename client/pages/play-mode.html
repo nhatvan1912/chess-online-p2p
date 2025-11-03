@@ -24,13 +24,15 @@
           <div class="mode-icon">🏆</div>
           <h3>Ranking Match</h3>
           <p>Thi đấu xếp hạng với người chơi cùng trình độ. Tìm đối thủ với điểm số chênh lệch không quá 50 điểm.</p>
+          <p></p>
           <button id="ranking-btn" class="btn btn-primary btn-large">Chơi Ranking</button>
         </div>
 
         <div class="mode-card">
           <div class="mode-icon">🎮</div>
           <h3>Custom Match</h3>
-          <p>Tạo hoặc tham gia phòng tùy chỉnh. Chơi với bạn bè hoặc người chơi khác với các thiết lập riêng.</p>
+          <p>Tạo hoặc tham gia phòng tùy chỉnh. Chơi với bạn bè hoặc người chơi khác.</p>
+          <p></p>
           <button id="custom-btn" class="btn btn-success btn-large">Chơi Custom</button>
         </div>
       </div>
@@ -88,7 +90,7 @@
 
     // Custom button
     document.getElementById('custom-btn').addEventListener('click', () => {
-      window.location.href = '/custom-lobby';
+      window.location.href = '/custom-match';
     });
 
     // Logout button

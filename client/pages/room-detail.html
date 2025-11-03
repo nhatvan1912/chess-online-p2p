@@ -86,7 +86,7 @@
     const roomId = urlParams.get('roomId');
 
     if (!roomId) {
-      window.location.href = '/custom-lobby';
+      window.location.href = '/custom-match';
     }
 
     // Initialize WebSocket
@@ -114,7 +114,7 @@
     document.getElementById('leave-room-btn').addEventListener('click', async () => {
       try {
         await fetch(`/api/rooms/${roomId}/leave`, { method: 'POST' });
-        window.location.href = '/custom-lobby';
+        window.location.href = '/custom-match';
       } catch (error) {
         console.error('Leave room error:', error);
       }
@@ -132,7 +132,7 @@
         
         if (data.type === 'game_started' && data.roomId == roomId) {
           // Redirect to game board
-          window.location.href = `/game-board?gameId=${data.gameId}`;
+          window.location.href = `/game?gameId=${data.gameId}`;
         }
 
         if (data.type === 'room_invitation') {

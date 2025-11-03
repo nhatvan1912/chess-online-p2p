@@ -3,11 +3,13 @@ const url = require('url');
 const matchmakingHandler = require('./handlers/matchmakingHandler');
 const roomHandler = require('./handlers/roomHandler');
 const gameHandler = require('./handlers/gameHandler');
+const PlayerDAO = require('../dao/PlayerDAO');
 
 class WebSocketServer {
   constructor(server) {
     this.wss = new WebSocket.Server({ server });
     this.clients = new Map(); // playerId -> ws
+    
     this.setupWebSocket();
   }
 
@@ -24,6 +26,7 @@ class WebSocketServer {
       // Lưu connection
       this.clients.set(playerId, ws);
       console.log(`✅ Player ${playerId} connected to WebSocket`);
+      this.handleConnect(playerId);
 
       // Gửi confirmation
       this.sendToPlayer(playerId, {
@@ -104,6 +107,9 @@ class WebSocketServer {
       case 'chat_message':
         gameHandler.sendChatMessage(playerId, payload, this);
         break;
+      case 'game_end':
+        gameHandler.handleGameEnd(payload.gameId, payload.result, this);
+        break;
 
       default:
         console.log(`⚠️ Unknown message type: ${type}`);
@@ -113,7 +119,11 @@ class WebSocketServer {
   handleDisconnect(playerId) {
     // Xử lý khi player disconnect
     matchmakingHandler.leaveQueue(playerId, this);
-    // Có thể thêm logic xử lý disconnect trong game
+    PlayerDAO.updatePlayerStatus(playerId, 'offline');
+  }
+  handleConnect(playerId) {
+    // Xử lý khi player connect
+    PlayerDAO.updatePlayerStatus(playerId, 'online');
   }
 
   // Gửi message đến một player

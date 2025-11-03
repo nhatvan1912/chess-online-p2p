@@ -13,14 +13,11 @@ class MatchmakingHandler {
   // Player tham gia queue matchmaking
   async joinQueue(playerId, wsServer) {
     try {
-      // Thêm vào queue
       const match = await MatchmakingService.addToQueue(playerId);
 
       if (match) {
-        // Tìm thấy match ngay lập tức
         const { matchId, player1Id, player2Id } = match;
         
-        // Gửi thông báo match found cho cả 2 players
         wsServer.sendToPlayer(player1Id, {
           type: 'match_found',
           matchId,
@@ -33,7 +30,6 @@ class MatchmakingHandler {
           opponentId: player1Id
         });
       } else {
-        // Vào queue chờ
         wsServer.sendToPlayer(playerId, {
           type: 'matchmaking_joined',
           message: 'Đang tìm đối thủ...',
@@ -48,7 +44,6 @@ class MatchmakingHandler {
     }
   }
 
-  // Player rời queue
   leaveQueue(playerId, wsServer) {
     MatchmakingService.removeFromQueue(playerId);
     wsServer.sendToPlayer(playerId, {
@@ -57,7 +52,6 @@ class MatchmakingHandler {
     });
   }
 
-  // Player accept match
   async acceptMatch(playerId, matchId, wsServer) {
     try {
       const result = MatchmakingService.acceptMatch(matchId, playerId);
@@ -71,10 +65,8 @@ class MatchmakingHandler {
       }
 
       if (result.ready) {
-        // Cả 2 đã accept, tạo game
         const { player1Id, player2Id } = result;
 
-        // Tạo room tự động cho ranked match
         const roomData = {
           room_name: 'Ranked Match',
           room_type: 'public',
@@ -85,7 +77,6 @@ class MatchmakingHandler {
         await RoomDAO.joinRoom(roomResult.id, player2Id);
         await RoomDAO.updateRoomStatus(roomResult.id, 'playing');
 
-        // Tạo game
         const gameData = {
           game_mode: 'normal',
           room_id: roomResult.id,
@@ -96,7 +87,6 @@ class MatchmakingHandler {
 
         const game = await GameService.createGame(gameData);
 
-        // Gửi thông báo game started cho cả 2 players
         const gameInfo = {
           type: 'game_started',
           gameId: game.gameId,
@@ -109,7 +99,6 @@ class MatchmakingHandler {
         wsServer.sendToPlayer(player1Id, gameInfo);
         wsServer.sendToPlayer(player2Id, gameInfo);
       } else {
-        // Chờ player kia accept
         wsServer.sendToPlayer(playerId, {
           type: 'match_accepted',
           message: 'Đang chờ đối thủ chấp nhận...'
@@ -123,7 +112,6 @@ class MatchmakingHandler {
     }
   }
 
-  // Player decline match
   declineMatch(playerId, matchId, wsServer) {
     try {
       MatchmakingService.declineMatch(matchId, playerId);

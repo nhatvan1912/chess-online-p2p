@@ -152,6 +152,12 @@
         if (data.type === 'room_list_updated') {
           loadRooms();
         }
+        if (data.type === 'room_invitation') {
+          // Handle invitation
+          if (confirm(`Bạn được mời vào phòng. Tham gia?`)) {
+            window.location.href = `/room-detail?roomId=${data.roomId}`;
+          }
+        }
         if (originalOnMessage) originalOnMessage(event);
       };
     }

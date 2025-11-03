@@ -3,15 +3,12 @@ const GameService = require('../../services/GameService');
 const RoomDAO = require('../../dao/RoomDAO');
 
 class RoomHandler {
-  // Cập nhật trạng thái ready
   async updateReady(playerId, roomId, isReady, wsServer) {
     try {
       const result = await RoomService.updateReadyStatus(roomId, playerId, isReady);
       
       if (result.success) {
         const room = result.room;
-        
-        // Gửi update cho cả 2 players trong phòng
         const playerIds = [room.host_player_id, room.guest_player_id].filter(id => id);
         
         wsServer.sendToPlayers(playerIds, {
@@ -27,7 +24,6 @@ class RoomHandler {
     }
   }
 
-  // Bắt đầu game
   async startGame(playerId, roomId, wsServer) {
     try {
       const room = await RoomDAO.getRoomById(roomId);
@@ -36,18 +32,15 @@ class RoomHandler {
         throw new Error('Phòng không tồn tại');
       }
 
-      // Kiểm tra player có phải host không
       if (room.host_player_id !== playerId) {
         throw new Error('Chỉ host mới có thể bắt đầu game');
       }
 
-      // Kiểm tra điều kiện bắt đầu
       const canStart = await RoomService.canStartGame(roomId);
       if (!canStart.canStart) {
         throw new Error(canStart.message);
       }
 
-      // Tạo game
       const gameData = {
         game_mode: room.room_mode,
         room_id: roomId,
@@ -58,7 +51,6 @@ class RoomHandler {
 
       const game = await GameService.createGame(gameData);
 
-      // Gửi thông báo game started
       const gameInfo = {
         type: 'game_started',
         gameId: game.gameId,
@@ -84,10 +76,8 @@ class RoomHandler {
     }
   }
 
-  // Mời player vào phòng
   invitePlayer(playerId, targetPlayerId, roomId, wsServer) {
     try {
-      // Gửi lời mời đến target player
       wsServer.sendToPlayer(targetPlayerId, {
         type: 'room_invitation',
         roomId: roomId,
@@ -106,7 +96,6 @@ class RoomHandler {
     }
   }
 
-  // Broadcast room list update
   broadcastRoomListUpdate(wsServer) {
     RoomService.getWaitingRooms()
       .then(result => {

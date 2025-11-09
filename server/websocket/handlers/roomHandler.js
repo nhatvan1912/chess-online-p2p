@@ -76,11 +76,15 @@ class RoomHandler {
     }
   }
 
-  invitePlayer(playerId, targetPlayerId, roomId, wsServer) {
+  async invitePlayer(playerId, targetPlayerId, roomId, wsServer) {
     try {
+      const result = await RoomService.getRoomInfo(roomId);
+      console.log(result.room.password);
+
       wsServer.sendToPlayer(targetPlayerId, {
         type: 'room_invitation',
         roomId: roomId,
+        roomPassword: result.room.password,
         fromPlayerId: playerId
       });
 

@@ -172,6 +172,11 @@ function updateRoomDetailsUI(room) {
     const hostStatus = document.getElementById('host-status');
     hostStatus.querySelector('span:last-child').textContent = room.host_ready ? '✓ Sẵn sàng' : 'Chưa sẵn sàng';
     hostStatus.classList.toggle('ready', room.host_ready);
+
+    
+  const readyBtn = document.getElementById('ready-btn');
+  readyBtn.textContent = room.host_ready ? 'Hủy sẵn sàng' : 'Sẵn sàng';
+  readyBtn.className = room.host_ready ? 'btn btn-secondary btn-large' : 'btn btn-success btn-large';
   }
 
   // Guest info
@@ -273,6 +278,7 @@ function invitePlayer(targetPlayerId) {
 window.createRoom = createRoom;
 window.loadRooms = loadRooms;
 window.joinRoom = joinRoom;
+window.joinRoomWithPassword = joinRoomWithPassword;
 window.loadRoomDetails = loadRoomDetails;
 window.toggleReady = toggleReady;
 window.startGameFromRoom = startGameFromRoom;

@@ -89,28 +89,20 @@
       window.location.href = '/custom-match';
     }
 
-    // Initialize WebSocket
     initWebSocket(player.player_id);
-
-    // Load room details
     loadRoomDetails(roomId);
-
-    // Load online players
     loadOnlinePlayers();
 
-    // Ready button
     let isReady = false;
     document.getElementById('ready-btn').addEventListener('click', () => {
       isReady = !isReady;
       toggleReady(roomId, isReady);
     });
 
-    // Start game button
     document.getElementById('start-game-btn').addEventListener('click', () => {
       startGameFromRoom(roomId);
     });
 
-    // Leave room button
     document.getElementById('leave-room-btn').addEventListener('click', async () => {
       try {
         await fetch(`/api/rooms/${roomId}/leave`, { method: 'POST' });
@@ -120,7 +112,6 @@
       }
     });
 
-    // Listen for room updates
     if (window.ws) {
       const originalOnMessage = window.ws.onmessage;
       window.ws.onmessage = (event) => {
@@ -131,12 +122,10 @@
         }
         
         if (data.type === 'game_started' && data.roomId == roomId) {
-          // Redirect to game board
           window.location.href = `/game?gameId=${data.gameId}`;
         }
 
         if (data.type === 'room_invitation') {
-          // Handle invitation
           if (confirm(`Bạn được mời vào phòng. Tham gia?`)) {
             window.location.href = `/room-detail?roomId=${data.roomId}`;
           }
@@ -163,7 +152,7 @@
         guestStatus.classList.toggle('ready', room.guest_ready);
       }
 
-      // Update start button (only show for host)
+      // Update start button
       if (room.host_player_id === player.player_id) {
         const startBtn = document.getElementById('start-game-btn');
         startBtn.style.display = 'block';

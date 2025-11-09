@@ -71,7 +71,6 @@
 
     document.getElementById('player-name').textContent = player.displayname || player.username;
 
-    // Load player stats
     fetch(`/api/players/${player.player_id}/stats`)
       .then(res => res.json())
       .then(data => {
@@ -83,17 +82,14 @@
         }
       });
 
-    // Ranking button
     document.getElementById('ranking-btn').addEventListener('click', () => {
       window.location.href = '/ranking';
     });
 
-    // Custom button
     document.getElementById('custom-btn').addEventListener('click', () => {
       window.location.href = '/custom-match';
     });
 
-    // Logout button
     document.getElementById('logout-btn').addEventListener('click', async () => {
       try {
         await fetch('/api/auth/logout', { method: 'POST' });
@@ -104,7 +100,6 @@
       }
     });
 
-    // Initialize WebSocket
     initWebSocket(player.player_id);
   </script>
 </body>

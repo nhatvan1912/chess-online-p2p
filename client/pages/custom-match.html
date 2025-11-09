@@ -106,22 +106,16 @@
     }
 
     document.getElementById('player-name').textContent = player.displayname || player.username;
-
-    // Initialize WebSocket
     initWebSocket(player.player_id);
-
-    // Back button
     document.getElementById('back-btn').addEventListener('click', () => {
       window.location.href = '/play-mode';
     });
 
-    // Room type change
     document.getElementById('room-type').addEventListener('change', (e) => {
       const passwordRow = document.getElementById('password-row');
       passwordRow.style.display = e.target.value === 'private' ? 'block' : 'none';
     });
 
-    // Room mode change
     document.getElementById('room-mode').addEventListener('change', (e) => {
       const normalSettings = document.getElementById('time-settings-normal');
       const blitzSettings = document.getElementById('time-settings-blitz');
@@ -135,16 +129,12 @@
       }
     });
 
-    // Create room form
     document.getElementById('create-room-form').addEventListener('submit', (e) => {
       e.preventDefault();
       createRoom();
     });
 
-    // Load rooms
     loadRooms();
-
-    // Listen for room list updates
     if (window.ws) {
       const originalOnMessage = window.ws.onmessage;
       window.ws.onmessage = (event) => {
@@ -153,7 +143,6 @@
           loadRooms();
         }
         if (data.type === 'room_invitation') {
-          // Handle invitation
           if (confirm(`Bạn được mời vào phòng. Tham gia?`)) {
             window.location.href = `/room-detail?roomId=${data.roomId}`;
           }

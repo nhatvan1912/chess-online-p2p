@@ -52,7 +52,6 @@ function initWebSocket(playerId) {
     }
   };
 
-  // Make ws globally accessible
   window.ws = ws;
 }
 

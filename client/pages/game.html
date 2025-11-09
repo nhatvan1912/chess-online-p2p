@@ -107,13 +107,9 @@
       window.location.href = '/play-mode';
     }
 
-    // Initialize WebSocket
     initWebSocket(player.player_id);
-
-    // Initialize game
     initGame(gameId, player.player_id);
 
-    // Game actions
     document.getElementById('offer-draw-btn').addEventListener('click', () => {
       offerDraw(gameId);
     });
@@ -124,7 +120,6 @@
       }
     });
 
-    // Draw offer response
     document.getElementById('accept-draw-btn').addEventListener('click', () => {
       acceptDrawOffer(gameId);
       document.getElementById('draw-offer-modal').style.display = 'none';
@@ -134,7 +129,6 @@
       document.getElementById('draw-offer-modal').style.display = 'none';
     });
 
-    // Chat
     document.getElementById('send-chat-btn').addEventListener('click', () => {
       sendChatMessage(gameId);
     });
@@ -145,12 +139,10 @@
       }
     });
 
-    // Back to lobby
     document.getElementById('back-to-lobby-btn').addEventListener('click', () => {
       window.location.href = '/play-mode';
     });
 
-    // Listen for WebSocket messages
     if (window.ws) {
       const originalOnMessage = window.ws.onmessage;
       window.ws.onmessage = (event) => {

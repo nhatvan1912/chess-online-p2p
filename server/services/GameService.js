@@ -4,10 +4,8 @@ const PlayerStatsDAO = require('../dao/PlayerStatsDAO');
 const RoomDAO = require('../dao/RoomDAO');
 
 class GameService {
-  // Tạo game mới
   async createGame(gameData) {
     try {
-      // Random phân màu quân cờ
       const isWhiteFirst = Math.random() >= 0.5;
       
       const game = {
@@ -20,7 +18,6 @@ class GameService {
 
       const gameId = await GameDAO.createGame(game);
 
-      // Cập nhật trạng thái phòng nếu có
       if (gameData.room_id) {
         await RoomDAO.updateRoomStatus(gameData.room_id, 'playing');
       }
@@ -37,7 +34,6 @@ class GameService {
     }
   }
 
-  // Lưu nước đi
   async saveMove(moveData) {
     try {
       await GameMoveDAO.createMove(moveData);
@@ -50,7 +46,6 @@ class GameService {
     }
   }
 
-  // Kết thúc game
   async endGame(gameId, result) {
     try {
       const game = await GameDAO.getGameById(gameId);
@@ -58,7 +53,6 @@ class GameService {
         throw new Error('Game không tồn tại');
       }
 
-      // Tính điểm thay đổi
       let whitePointChange = 0;
       let blackPointChange = 0;
 
@@ -74,11 +68,8 @@ class GameService {
           blackPointChange = 1;
         }
       }
-
-      // Cập nhật kết quả game
       await GameDAO.endGame(gameId, result, whitePointChange, blackPointChange);
 
-      // Cập nhật stats của player nếu là ranked
       if (game.is_ranked) {
         if (result === 'white_win') {
           await PlayerStatsDAO.updateStats(game.white_player_id, 'win', whitePointChange);
@@ -92,7 +83,6 @@ class GameService {
         }
       }
 
-      // Cập nhật trạng thái phòng nếu có
       if (game.room_id) {
         await RoomDAO.updateRoomStatus(game.room_id, 'finished');
       }
@@ -167,9 +157,7 @@ class GameService {
     }
   }
 
-  // Validate nước đi (có thể thêm logic validate với chess.js ở đây)
   validateMove(from, to, fen) {
-    // Placeholder - client sẽ validate với chess.js
     return true;
   }
 }

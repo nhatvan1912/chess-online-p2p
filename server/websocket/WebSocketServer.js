@@ -23,18 +23,15 @@ class WebSocketServer {
         return;
       }
 
-      // Lưu connection
       this.clients.set(playerId, ws);
       console.log(`✅ Player ${playerId} connected to WebSocket`);
       this.handleConnect(playerId);
 
-      // Gửi confirmation
       this.sendToPlayer(playerId, {
         type: 'connected',
         message: 'Kết nối WebSocket thành công'
       });
 
-      // Xử lý message
       ws.on('message', async (message) => {
         try {
           const data = JSON.parse(message);
@@ -48,14 +45,12 @@ class WebSocketServer {
         }
       });
 
-      // Xử lý disconnect
       ws.on('close', () => {
         console.log(`❌ Player ${playerId} disconnected`);
         this.clients.delete(playerId);
         this.handleDisconnect(playerId);
       });
 
-      // Xử lý error
       ws.on('error', (error) => {
         console.error(`❌ WebSocket error for player ${playerId}:`, error);
       });
@@ -117,16 +112,13 @@ class WebSocketServer {
   }
 
   handleDisconnect(playerId) {
-    // Xử lý khi player disconnect
     matchmakingHandler.leaveQueue(playerId, this);
     PlayerDAO.updatePlayerStatus(playerId, 'offline');
   }
   handleConnect(playerId) {
-    // Xử lý khi player connect
     PlayerDAO.updatePlayerStatus(playerId, 'online');
   }
 
-  // Gửi message đến một player
   sendToPlayer(playerId, data) {
     const ws = this.clients.get(playerId);
     if (ws && ws.readyState === WebSocket.OPEN) {

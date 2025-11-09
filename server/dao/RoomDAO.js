@@ -77,9 +77,9 @@ class RoomDAO {
          FROM tblRoom r
          LEFT JOIN tblPlayer hp ON r.host_player_id = hp.player_id
          LEFT JOIN tblPlayer gp ON r.guest_player_id = gp.player_id
-         WHERE r.status = ? AND r.room_type = ?
+         WHERE r.status = ?
          ORDER BY r.created_at DESC`,
-        ['waiting', 'public']
+        ['waiting']
       );
       return rows;
     } catch (error) {

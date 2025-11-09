@@ -2,10 +2,8 @@ const RoomDAO = require('../dao/RoomDAO');
 const bcrypt = require('bcrypt');
 
 class RoomService {
-  // Tạo phòng mới
   async createRoom(roomData) {
     try {
-      // Hash password nếu là phòng private
       if (roomData.room_type === 'private' && roomData.password) {
         const saltRounds = 10;
         roomData.password = await bcrypt.hash(roomData.password, saltRounds);
@@ -24,7 +22,6 @@ class RoomService {
     }
   }
 
-  // Lấy danh sách phòng đang chờ
   async getWaitingRooms() {
     try {
       const rooms = await RoomDAO.getWaitingRooms();
@@ -37,7 +34,6 @@ class RoomService {
     }
   }
 
-  // Tham gia phòng
   async joinRoom(roomId, playerId, password = null) {
     try {
       const room = await RoomDAO.getRoomById(roomId);
@@ -54,7 +50,6 @@ class RoomService {
         throw new Error('Phòng đã đầy');
       }
 
-      // Kiểm tra password nếu là phòng private
       if (room.room_type === 'private' && room.password) {
         if (!password) {
           throw new Error('Phòng yêu cầu mật khẩu');
@@ -78,7 +73,6 @@ class RoomService {
     }
   }
 
-  // Rời phòng
   async leaveRoom(roomId, playerId) {
     try {
       await RoomDAO.leaveRoom(roomId, playerId);
@@ -91,7 +85,6 @@ class RoomService {
     }
   }
 
-  // Cập nhật trạng thái sẵn sàng
   async updateReadyStatus(roomId, playerId, isReady) {
     try {
       await RoomDAO.updateReadyStatus(roomId, playerId, isReady);
@@ -107,7 +100,6 @@ class RoomService {
     }
   }
 
-  // Kiểm tra xem có thể bắt đầu game không
   async canStartGame(roomId) {
     try {
       const room = await RoomDAO.getRoomById(roomId);
@@ -130,7 +122,6 @@ class RoomService {
     }
   }
 
-  // Lấy thông tin phòng
   async getRoomInfo(roomId) {
     try {
       const room = await RoomDAO.getRoomById(roomId);
@@ -143,7 +134,6 @@ class RoomService {
     }
   }
 
-  // Lấy phòng của player
   async getPlayerRoom(playerId) {
     try {
       const room = await RoomDAO.getRoomByPlayerId(playerId);

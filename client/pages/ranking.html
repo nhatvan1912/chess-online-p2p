@@ -62,30 +62,23 @@
 
     document.getElementById('player-name').textContent = player.displayname || player.username;
 
-    // Initialize WebSocket
     initWebSocket(player.player_id);
-
-    // Back button
     document.getElementById('back-btn').addEventListener('click', () => {
       window.location.href = '/play-mode';
     });
 
-    // Start matchmaking
     document.getElementById('start-matchmaking-btn').addEventListener('click', () => {
       startMatchmaking();
     });
 
-    // Cancel matchmaking
     document.getElementById('cancel-matchmaking-btn').addEventListener('click', () => {
       cancelMatchmaking();
     });
 
-    // Accept match
     document.getElementById('accept-match-btn').addEventListener('click', () => {
       acceptMatch();
     });
 
-    // Decline match
     document.getElementById('decline-match-btn').addEventListener('click', () => {
       declineMatch();
     });

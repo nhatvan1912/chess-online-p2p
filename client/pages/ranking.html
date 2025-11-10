@@ -82,6 +82,18 @@
     document.getElementById('decline-match-btn').addEventListener('click', () => {
       declineMatch();
     });
+    if (window.ws) {
+      const originalOnMessage = window.ws.onmessage;
+      window.ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'room_invitation') {
+          if (confirm(`Bạn được mời vào phòng. Tham gia?`)) {
+            joinRoomWithPassword(data.roomId, data.roomPassword);
+          }
+        }
+        if (originalOnMessage) originalOnMessage(event);
+      };
+    }
   </script>
 </body>
 </html>

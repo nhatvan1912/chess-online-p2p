@@ -104,12 +104,8 @@
     });
 
     document.getElementById('leave-room-btn').addEventListener('click', async () => {
-      try {
-        await fetch(`/api/rooms/${roomId}/leave`, { method: 'POST' });
-        window.location.href = '/custom-match';
-      } catch (error) {
-        console.error('Leave room error:', error);
-      }
+      leaveRoom(roomId);
+      window.location.href = '/custom-match';
     });
 
     if (window.ws) {
@@ -127,8 +123,13 @@
 
         if (data.type === 'room_invitation') {
           if (confirm(`Bạn được mời vào phòng. Tham gia?`)) {
-            window.location.href = `/room-detail?roomId=${data.roomId}`;
+            leaveRoom(roomId);
+            joinRoomWithPassword(data.roomId, data.roomPassword);
           }
+        }
+
+        if (data.type === 'update_UI' && data.roomId == roomId) {
+          loadRoomDetails(roomId);
         }
         
         if (originalOnMessage) originalOnMessage(event);

@@ -9,24 +9,44 @@ class WebSocketServer {
   constructor(server) {
     this.wss = new WebSocket.Server({ server });
     this.clients = new Map(); // playerId -> ws
-    
+    this.disconnectGraceTimers = new Map(); // playerId -> timeoutId
+    this.graceMs = parseInt(process.env.WS_DISCONNECT_GRACE_MS || '5000', 10);
+
     this.setupWebSocket();
   }
 
   setupWebSocket() {
     this.wss.on('connection', (ws, req) => {
       const params = url.parse(req.url, true).query;
-      const playerId = parseInt(params.playerId);
+      const playerId = parseInt(params.playerId, 10);
 
       if (!playerId) {
         ws.close();
         return;
       }
 
-      this.clients.set(playerId, ws);
-      console.log(`✅ Player ${playerId} connected to WebSocket`);
-      this.handleConnect(playerId);
+      const pendingTimer = this.disconnectGraceTimers.get(playerId);
+      const isReconnectWithinGrace = !!pendingTimer;
+      if (pendingTimer) {
+        clearTimeout(pendingTimer);
+        this.disconnectGraceTimers.delete(playerId);
+      }
+      const oldWs = this.clients.get(playerId);
+      if (oldWs && oldWs !== ws) {
+        try {
+          oldWs.terminate();
+        } catch (e) {
+          // ignore
+        }
+      }
 
+      this.clients.set(playerId, ws);
+
+      if (!isReconnectWithinGrace) {
+        console.log(`Player ${playerId} connected to WebSocket`);
+      }
+
+      this.handleConnect(playerId);
       this.sendToPlayer(playerId, {
         type: 'connected',
         message: 'Kết nối WebSocket thành công'
@@ -46,9 +66,29 @@ class WebSocketServer {
       });
 
       ws.on('close', () => {
-        console.log(`❌ Player ${playerId} disconnected`);
-        this.clients.delete(playerId);
-        this.handleDisconnect(playerId);
+        const storedWs = this.clients.get(playerId);
+        if (storedWs && storedWs !== ws) {
+          return;
+        }
+        const t = setTimeout(async () => {
+          const currentWs = this.clients.get(playerId);
+          if (currentWs && currentWs.readyState === WebSocket.OPEN) {
+            this.disconnectGraceTimers.delete(playerId);
+            return;
+          }
+
+          console.log(`Player ${playerId} disconnected from WebSocket`);
+          this.clients.delete(playerId);
+          this.disconnectGraceTimers.delete(playerId);
+
+          try {
+            this.handleDisconnect(playerId);
+          } catch (err) {
+            console.error('Error in handleDisconnect:', err);
+          }
+        }, this.graceMs);
+
+        this.disconnectGraceTimers.set(playerId, t);
       });
 
       ws.on('error', (error) => {
@@ -85,6 +125,12 @@ class WebSocketServer {
       case 'invite_player':
         roomHandler.invitePlayer(playerId, payload.targetPlayerId, payload.roomId, this);
         break;
+      case 'join_success':
+        await roomHandler.handleUpdateUI(playerId, payload.roomId, this);
+        break;
+      case 'leave_room':
+        await roomHandler.leaveRoom(playerId, payload.roomId, this);
+        break;
 
       // Game
       case 'make_move':
@@ -112,11 +158,33 @@ class WebSocketServer {
   }
 
   handleDisconnect(playerId) {
-    matchmakingHandler.leaveQueue(playerId, this);
-    PlayerDAO.updatePlayerStatus(playerId, 'offline');
+    try {
+      matchmakingHandler.leaveQueue(playerId, this);
+    } catch (err) {
+      console.error('Error leaving matchmaking on disconnect:', err);
+    }
+
+    try {
+      PlayerDAO.updatePlayerStatus(playerId, 'offline');
+    } catch (err) {
+      console.error('Error updating player status to offline:', err);
+    }
   }
+
   handleConnect(playerId) {
-    PlayerDAO.updatePlayerStatus(playerId, 'online');
+    try {
+      // If there was a grace timer scheduled for this player, clear it (reconnect).
+      const pending = this.disconnectGraceTimers.get(playerId);
+      if (pending) {
+        clearTimeout(pending);
+        this.disconnectGraceTimers.delete(playerId);
+        console.log(`✅ Cleared pending disconnect timer for player ${playerId} on connect`);
+      }
+
+      PlayerDAO.updatePlayerStatus(playerId, 'online');
+    } catch (err) {
+      console.error('Error updating player status to online:', err);
+    }
   }
 
   sendToPlayer(playerId, data) {
@@ -154,5 +222,4 @@ class WebSocketServer {
     return Array.from(this.clients.keys());
   }
 }
-
 module.exports = WebSocketServer;

@@ -144,7 +144,7 @@
         }
         if (data.type === 'room_invitation') {
           if (confirm(`Bạn được mời vào phòng. Tham gia?`)) {
-            window.location.href = `/room-detail?roomId=${data.roomId}`;
+            joinRoomWithPassword(data.roomId, data.roomPassword);
           }
         }
         if (originalOnMessage) originalOnMessage(event);

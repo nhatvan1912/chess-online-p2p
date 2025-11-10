@@ -79,7 +79,6 @@ class RoomHandler {
   async invitePlayer(playerId, targetPlayerId, roomId, wsServer) {
     try {
       const result = await RoomService.getRoomInfo(roomId);
-      console.log(result.room.password);
 
       wsServer.sendToPlayer(targetPlayerId, {
         type: 'room_invitation',
@@ -92,6 +91,45 @@ class RoomHandler {
         type: 'invitation_sent',
         message: 'Đã gửi lời mời'
       });
+    } catch (error) {
+      wsServer.sendToPlayer(playerId, {
+        type: 'error',
+        message: error.message
+      });
+    }
+  }
+
+  async handleUpdateUI(playerId, roomId, wsServer) {
+    try {
+      const result = await RoomService.getRoomInfo(roomId);
+      // console.log('Join success handled for room:', result.room);
+      if (result.success) {
+        const room = result.room;
+        const opponentID = room.host_player_id === playerId
+          ? room.guest_player_id
+          : room.host_player_id;
+        if (opponentID) {
+          wsServer.sendToPlayer(opponentID, {
+            type: 'update_UI',
+            roomId: roomId,
+            message: 'Cập nhật giao diện phòng',
+          });
+        }
+      }
+    } catch (error) {
+      wsServer.sendToPlayer(playerId, {
+        type: 'error',
+        message: error.message
+      })
+    }
+  }
+
+  async leaveRoom(playerId, roomId, wsServer) {
+    try {
+      const result = await RoomService.leaveRoom(roomId, playerId);
+      if (result.success) {
+        await this.handleUpdateUI(playerId, roomId, wsServer);
+      }
     } catch (error) {
       wsServer.sendToPlayer(playerId, {
         type: 'error',

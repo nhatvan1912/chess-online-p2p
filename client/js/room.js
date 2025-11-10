@@ -95,11 +95,15 @@ async function joinRoomWithPassword(roomId, password) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password })
     });
-
+    console.log(password);
     const data = await response.json();
     
     if (data.success) {
       window.location.href = `/room-detail?roomId=${roomId}`;
+      sendWebSocketMessage({
+        type: 'join_success',
+        payload: { roomId: parseInt(roomId)}
+      });
     } else {
       alert(data.message);
     }
@@ -172,11 +176,7 @@ function updateRoomDetailsUI(room) {
     const hostStatus = document.getElementById('host-status');
     hostStatus.querySelector('span:last-child').textContent = room.host_ready ? '✓ Sẵn sàng' : 'Chưa sẵn sàng';
     hostStatus.classList.toggle('ready', room.host_ready);
-
     
-  const readyBtn = document.getElementById('ready-btn');
-  readyBtn.textContent = room.host_ready ? 'Hủy sẵn sàng' : 'Sẵn sàng';
-  readyBtn.className = room.host_ready ? 'btn btn-secondary btn-large' : 'btn btn-success btn-large';
   }
 
   // Guest info
@@ -194,6 +194,9 @@ function updateRoomDetailsUI(room) {
     guestStatus.classList.toggle('ready', room.guest_ready);
   } else {
     document.getElementById('guest-name').textContent = 'Đang chờ...';
+    const guestStatus = document.getElementById('guest-status');
+    guestStatus.classList.toggle('ready', 0);
+    guestStatus.querySelector('span:last-child').textContent = 'Chưa sẵn sàng';
   }
 
   // Show/hide start button for host
@@ -202,6 +205,15 @@ function updateRoomDetailsUI(room) {
     const startBtn = document.getElementById('start-game-btn');
     startBtn.style.display = 'block';
     startBtn.disabled = !(room.host_ready && room.guest_ready && room.guest_player_id);
+
+    const readyBtn = document.getElementById('ready-btn');
+    readyBtn.textContent = room.host_ready ? 'Hủy sẵn sàng' : 'Sẵn sàng';
+    readyBtn.className = room.host_ready ? 'btn btn-secondary btn-large' : 'btn btn-success btn-large';
+  }
+  else{
+    const readyBtn = document.getElementById('ready-btn');
+    readyBtn.textContent = room.guest_ready ? 'Hủy sẵn sàng' : 'Sẵn sàng';
+    readyBtn.className = room.guest_ready ? 'btn btn-secondary btn-large' : 'btn btn-success btn-large';
   }
 }
 
@@ -274,6 +286,14 @@ function invitePlayer(targetPlayerId) {
   alert('Đã gửi lời mời');
 }
 
+function leaveRoom(roomId){
+  sendWebSocketMessage({
+    type: 'leave_room',
+    payload: { roomId: parseInt(roomId) }
+  });
+}
+
+
 // Export functions
 window.createRoom = createRoom;
 window.loadRooms = loadRooms;
@@ -284,3 +304,4 @@ window.toggleReady = toggleReady;
 window.startGameFromRoom = startGameFromRoom;
 window.loadOnlinePlayers = loadOnlinePlayers;
 window.invitePlayer = invitePlayer;
+window.leaveRoom = leaveRoom;

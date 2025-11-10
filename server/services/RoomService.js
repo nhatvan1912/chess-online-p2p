@@ -4,10 +4,10 @@ const bcrypt = require('bcrypt');
 class RoomService {
   async createRoom(roomData) {
     try {
-      if (roomData.room_type === 'private' && roomData.password) {
-        const saltRounds = 10;
-        roomData.password = await bcrypt.hash(roomData.password, saltRounds);
-      }
+      // if (roomData.room_type === 'private' && roomData.password) {
+      //   const saltRounds = 10;
+      //   roomData.password = await bcrypt.hash(roomData.password, saltRounds);
+      // }
 
       const result = await RoomDAO.createRoom(roomData);
       const room = await RoomDAO.getRoomById(result.id);
@@ -54,8 +54,8 @@ class RoomService {
         if (!password) {
           throw new Error('Phòng yêu cầu mật khẩu');
         }
-        const isPasswordValid = await bcrypt.compare(password, room.password);
-        if (!isPasswordValid) {
+        // const isPasswordValid = await bcrypt.compare(password, room.password);
+        if (password !== room.password) {
           throw new Error('Mật khẩu không đúng');
         }
       }

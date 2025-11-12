@@ -35,13 +35,11 @@ router.get('/waiting', authMiddleware, async (req, res) => {
 });
 
 // Tham gia phòng
-router.post('/:roomId/join', authMiddleware, async (req, res) => {
+router.get('/:roomId/join', authMiddleware, async (req, res) => {
   try {
-    const { password } = req.body;
     const result = await RoomService.joinRoom(
       parseInt(req.params.roomId),
-      req.session.playerId,
-      password
+      req.session.playerId
     );
     res.json(result);
   } catch (error) {

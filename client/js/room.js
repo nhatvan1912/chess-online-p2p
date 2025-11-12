@@ -89,13 +89,29 @@ async function joinRoom(roomId, roomType) {
 }
 
 async function joinRoomWithPassword(roomId, password) {
+  sendWebSocketMessage({
+    type: 'request_join_room',
+    payload: { roomId, password } 
+  });
+}
+
+async function approveJoinRequest(roomId, requesterId) {
+  sendWebSocketMessage({
+    type: 'approve_join_room',
+    payload: { roomId: parseInt(roomId), requesterId: parseInt(requesterId) }
+  });
+}
+
+async function rejectJoinRequest(roomId, requesterId) {
+  sendWebSocketMessage({
+    type: 'reject_join_room',
+    payload: { roomId: parseInt(roomId), requesterId: parseInt(requesterId) }
+  });
+}
+
+async function joinRoomDirectly(roomId) {
   try {
-    const response = await fetch(`/api/rooms/${roomId}/join`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password })
-    });
-    console.log(password);
+    const response = await fetch(`/api/rooms/${roomId}/join`);
     const data = await response.json();
     
     if (data.success) {
@@ -112,7 +128,6 @@ async function joinRoomWithPassword(roomId, password) {
     alert('Lỗi tham gia phòng');
   }
 }
-
 // Password modal handlers
 if (document.getElementById('submit-password-btn')) {
   document.getElementById('submit-password-btn').addEventListener('click', () => {

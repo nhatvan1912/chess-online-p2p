@@ -105,6 +105,7 @@ class RoomDAO {
     try {
       // Kiểm tra xem player là host hay guest
       const room = await this.getRoomById(roomId);
+      let deleteRoom = false;
       if (!room) return false;
 
       if (room.host_player_id === playerId) {
@@ -116,6 +117,7 @@ class RoomDAO {
           );
         } else {
           await pool.execute('DELETE FROM tblRoom WHERE id = ?', [roomId]);
+          deleteRoom = true;
         }
       } else if (room.guest_player_id === playerId) {
         // Nếu là guest, set guest_player_id về NULL
@@ -124,7 +126,7 @@ class RoomDAO {
           [roomId]
         );
       }
-      return true;
+      return deleteRoom;
     } catch (error) {
       throw error;
     }

@@ -132,6 +132,14 @@
           loadRoomDetails(roomId);
         }
         
+        if (data.type == 'room_join_request' && data.roomId == roomId) {
+          const approve = confirm(`${data.requesterName} muốn tham gia phòng của bạn. Chấp nhận?`);
+          if (approve) {
+            approveJoinRequest(roomId, data.requesterId);
+          } else {
+            rejectJoinRequest(roomId, data.requesterId);
+          }
+        }
         if (originalOnMessage) originalOnMessage(event);
       };
     }

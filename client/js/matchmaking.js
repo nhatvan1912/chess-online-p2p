@@ -69,7 +69,6 @@ function declineMatch() {
   }
 }
 
-// Override WebSocket message handler for matchmaking
 const originalHandler = window.handleWebSocketMessage;
 window.handleWebSocketMessage = function (data) {
   switch (data.type) {

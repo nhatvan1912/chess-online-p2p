@@ -111,6 +111,15 @@
             joinRoomWithPassword(data.roomId, data.roomPassword);
           }
         }
+        if(data.type === 'join_approved') {
+          joinRoomDirectly(data.roomId);
+        }
+        if(data.type === 'join_rejected') {
+          alert('Yêu cầu tham gia phòng bị từ chối.');
+        }
+        if(data.type === "join_request_sent") {
+          alert('Yêu cầu tham gia phòng đã được gửi đến chủ phòng.');
+        }
         if (originalOnMessage) originalOnMessage(event);
       };
     }

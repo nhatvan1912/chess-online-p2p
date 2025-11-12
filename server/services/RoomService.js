@@ -34,7 +34,7 @@ class RoomService {
     }
   }
 
-  async joinRoom(roomId, playerId, password = null) {
+  async joinRoom(roomId, playerId) {
     try {
       const room = await RoomDAO.getRoomById(roomId);
       
@@ -44,20 +44,6 @@ class RoomService {
 
       if (room.status !== 'waiting') {
         throw new Error('Phòng đã bắt đầu hoặc đã kết thúc');
-      }
-
-      if (room.guest_player_id) {
-        throw new Error('Phòng đã đầy');
-      }
-
-      if (room.room_type === 'private' && room.password) {
-        if (!password) {
-          throw new Error('Phòng yêu cầu mật khẩu');
-        }
-        // const isPasswordValid = await bcrypt.compare(password, room.password);
-        if (password !== room.password) {
-          throw new Error('Mật khẩu không đúng');
-        }
       }
 
       await RoomDAO.joinRoom(roomId, playerId);
@@ -75,9 +61,10 @@ class RoomService {
 
   async leaveRoom(roomId, playerId) {
     try {
-      await RoomDAO.leaveRoom(roomId, playerId);
+      const result = await RoomDAO.leaveRoom(roomId, playerId);
       return {
-        success: true,
+        success: true,  
+        deleteRoom: result,
         message: 'Rời phòng thành công'
       };
     } catch (error) {
